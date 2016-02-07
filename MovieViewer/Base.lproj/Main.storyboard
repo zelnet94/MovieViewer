@@ -57,7 +57,6 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <connections>
-                        <outlet property="TableView" destination="r9f-lk-eFg" id="vRs-0a-IfZ"/>
                         <outlet property="tableView" destination="r9f-lk-eFg" id="dtJ-yV-ZUJ"/>
                     </connections>
                 </viewController>
