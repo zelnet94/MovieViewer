@@ -1,10 +1,12 @@
-//
 //  MoviesViewController.swift
 //  MovieViewer
 //
 //  Created by  on 2/1/16.
 //  Copyright © 2016 CodePath. All rights reserved.
 //
+//
+
+
 
 import UIKit
 import AFNetworking
@@ -16,7 +18,6 @@ let url = NSURL(string: "https://api.themoviedb.org/3/movie/now_playing?api_key=
 
 class MoviesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     
-
     @IBOutlet weak var tableView: UITableView!
     
     var movies: [NSDictionary]?
@@ -24,20 +25,19 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        tableView.dataSource = self
+        tableView.delegate = self
+        
         // Initialize a UIRefreshControl
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: "refreshControlAction:", forControlEvents: UIControlEvents.ValueChanged)
         tableView.insertSubview(refreshControl, atIndex: 0)
         
         //Show HUD before request is made
-        MBProgressHUD.showHUDAddedTo(self.view, animated: true)
+                MBProgressHUD.showHUDAddedTo(self.view, animated: true)
         
         //Hide HUD if request goes back (required on UI thread)
-        MBProgressHUD.hideHUDForView(self.view, animated: true)
-        
-        
-        tableView.dataSource = self
-        tableView.delegate = self
+                MBProgressHUD.hideHUDForView(self.view, animated: true)
         
         
         let apiKey = "a07e22bc18f5cb106bfe4cc1f83ad8ed"
@@ -69,45 +69,55 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         task.resume()
         // Do any additional setup after loading the view.
         
-    }
-    
-    
-    
-    
-    func refreshControlAction(refreshControl: UIRefreshControl) {
         
-        // ... Create the NSURLRequest (myRequest) ...
         
-        let myRequest = NSURLRequest(
-            URL: url!,
-            cachePolicy: NSURLRequestCachePolicy.ReloadIgnoringLocalCacheData,
-            timeoutInterval: 10
         
-        )
-        
-        // Configure session so that completion handler is executed on main UI thread
-        let session = NSURLSession(
-            configuration: NSURLSessionConfiguration.defaultSessionConfiguration(),
-            delegate:nil,
-            delegateQueue:NSOperationQueue.mainQueue()
-        )
-        
-        // Display HUD right before the request is made
-        MBProgressHUD.showHUDAddedTo(self.view, animated: true)
-        
-        let task : NSURLSessionDataTask = session.dataTaskWithRequest(myRequest,
-            completionHandler: { (data, response, error) in
+        // Makes a network request to get updated data
+        // Updates the tableView with the new data
+        // Hides the RefreshControl
+        func refreshControlAction(refreshControl: UIRefreshControl) {
+            
+            // ... Create the NSURLRequest (myRequest) ...
+            
+            let myRequest = NSURLRequest(
+                URL: url!,
+                cachePolicy: NSURLRequestCachePolicy.ReloadIgnoringLocalCacheData,
+                timeoutInterval: 10)
+            
+            // Configure session so that completion handler is executed on main UI thread
+            let session = NSURLSession(
+                configuration: NSURLSessionConfiguration.defaultSessionConfiguration(),
+                delegate: nil,
+                delegateQueue: NSOperationQueue.mainQueue()
                 
-                //Reload the table view since there is new data
-                
-               self.tableView.reloadData()
-                
-                //refreshControl stops spinning command
-               refreshControl.endRefreshing()
-                
-        });
+            )
+            
+            let task: NSURLSessionDataTask = session.dataTaskWithRequest(request,
+                completionHandler: { (dataOrNil, response, error) in
+                    if let data = dataOrNil {
+                        if let responseDictionary = try! NSJSONSerialization.JSONObjectWithData(
+                            data, options:[]) as? NSDictionary {
+                                print("response: \(responseDictionary)")
+                                
+                                self.movies = responseDictionary["results"] as? [NSDictionary]
+                                self.tableView.reloadData()
+                                
+                        }
+                    }
+            })
+            
+            // Reload the tableView now that there is new data
+            self.tableView.reloadData()
+            
+            // Tell the refreshControl to stop spinning
+            refreshControl.endRefreshing()
+            
+        };
+        
         task.resume()
     }
+    
+    
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -131,26 +141,46 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         let movie = movies![indexPath.row]
         let title = movie["title"] as! String
         let overview = movie["overview"] as! String
-        let posterPath = movie["poster_path"] as! String
+        cell.titleLabel.text = title
+        cell.overviewLabel.text = overview
         
         
         let baseUrl = "http://image.tmdb.org/t/p/w500"
-        let imageUrl = NSURL(string: baseUrl + posterPath)
+        if let posterPath = movie["poster_path"] as? String {
+            let imageUrl = NSURL(string: baseUrl + posterPath)
+            cell.posterImageView.setImageWithURL(imageUrl!)
         
         
-        cell.titleLabel.text = title
-        cell.overviewLabel.text = overview
-        cell.posterView.setImageWithURL(imageUrl!)
+        }
+        
         
         print("row \(indexPath.row)")
         return cell
         
     }
-
-
-
+    
+    
+    // MARK: - Navigation
+    
+    // In a storyboard-based application, you will often want to do a little preparation before navigation
+    
+    
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        
+        let cell = sender as! UITableViewCell
+        let indexPath = tableView.indexPathForCell(cell)
+        let movie = movies![indexPath!.row]
+        
+        let detailsViewController = segue.destinationViewController as! DetailsViewController
+        detailsViewController.movie = movie
+        
+        print("prepare for segue called")
+        
+        
+        // Get the new view controller using segue.destinationViewController.
+        // Pass the selected object to the new view controller.
+    
+                    }
 
 }
-
-
 
