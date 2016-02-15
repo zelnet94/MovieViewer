@@ -12,6 +12,8 @@ import UIKit
 import AFNetworking
 import MBProgressHUD
 
+let apiKey = "a07e22bc18f5cb106bfe4cc1f83ad8ed"
+let url = NSURL(string: "https://api.themoviedb.org/3/movie/now_playing?api_key=\(apiKey)")
 
 class MoviesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     
@@ -52,11 +54,13 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         //Show HUD before request is made
         MBProgressHUD.showHUDAddedTo(self.view, animated: true)
         
-        //Hide HUD if request goes back (required on UI thread)
-        MBProgressHUD.hideHUDForView(self.view, animated: true)
         
         let task: NSURLSessionDataTask = session.dataTaskWithRequest(request,
             completionHandler: { (dataOrNil, response, error) in
+                
+                //Hide HUD if request goes back (required on UI thread)
+                MBProgressHUD.hideHUDForView(self.view, animated: true)
+                
                 if let data = dataOrNil {
                     if let responseDictionary = try! NSJSONSerialization.JSONObjectWithData(
                         data, options:[]) as? NSDictionary {
