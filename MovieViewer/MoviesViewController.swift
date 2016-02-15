@@ -15,26 +15,29 @@ import MBProgressHUD
 let apiKey = "a07e22bc18f5cb106bfe4cc1f83ad8ed"
 let url = NSURL(string: "https://api.themoviedb.org/3/movie/now_playing?api_key=\(apiKey)")
 
-class MoviesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class MoviesViewController: UIViewController, UITableViewDataSource, UISearchBarDelegate, UITableViewDelegate {
     
+    @IBOutlet weak var searchBar: UISearchBar!
 
     @IBOutlet weak var tableView: UITableView!
 
+    var endpoint: String!
+    var showSearch = false
     
     var movies: [NSDictionary]?
-    var endpoint: String!
+    var filteredMovies: [NSDictionary]?
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        self.navigationItem.setRightBarButtonItem(UIBarButtonItem(barButtonSystemItem: .Search, target: self, action: "navSearch"), animated: true)
     
-        // Initialize a UIRefreshControl
-        let refreshControl = UIRefreshControl()
-        refreshControl.addTarget(self, action: "refreshControlAction:", forControlEvents: UIControlEvents.ValueChanged)
-        tableView.insertSubview(refreshControl, atIndex: 0)
-        
+       
         
         tableView.dataSource = self
         tableView.delegate = self
+        searchBar.delegate = self
         
         
         
@@ -115,7 +118,7 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
                                 
                                 
                                 // Reload the tableView now that there is new data
-                                self.movies = responseDictionary["results"] as! [NSDictionary]
+                                self.movies = responseDictionary["results"] as? [NSDictionary]
                                 self.tableView.reloadData()
                                 
                                 
@@ -141,6 +144,53 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         super.didReceiveMemoryWarning()
         // No recreated resources
         
+    }
+        //Search stuff
+    
+    func searchBar(searchBar: UISearchBar, textDidChange searchText: String) {
+        filteredMovies = searchText.isEmpty ? movies: movies?.filter({ (movies: NSDictionary) -> Bool in
+            if let title = movies["title"] as? String {
+                if title.rangeOfString(searchText, options: .CaseInsensitiveSearch) != nil {
+                        return true
+                }
+                else {
+                    return false
+                }
+            }
+            return false
+            
+            })
+        tableView.reloadData()
+    }
+    
+    func navSearch(){
+        showSearch = !showSearch
+        if ( showSearch){
+            showSearchBar()
+        }
+        else{
+            closeSearchBar()
+            
+        }
+    }
+    
+    func closeSearchBar() {
+        searchBar.endEditing(true)
+        UIView.animateWithDuration(0.4, animations: {
+            self.searchBar.alpha = 0
+        })
+        print("search close")
+        searchBar.resignFirstResponder()
+        
+    }
+    
+    func showSearchBar() {
+        print("search open")
+        UIView.animateWithDuration(0.4, animations: {
+            self.searchBar.alpha = 1
+    })
+        searchBar.becomeFirstResponder()
+    
     }
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
